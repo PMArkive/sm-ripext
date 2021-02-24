@@ -76,6 +76,14 @@ typeset HTTPFileCallback
 	function void (HTTPStatus status, any value, const char[] error);
 };
 
+methodmap HTTPRequest < Handle
+{
+	// Creates an HTTP request.
+	//
+	// @param url        URL to the REST API endpoint.
+	public native HTTPRequest(const char[] url);
+}
+
 methodmap HTTPResponse
 {
 	// Retrieves a HTTP header from the response.
