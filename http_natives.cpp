@@ -22,6 +22,8 @@
 #include "extension.h"
 #include "httpclient.h"
 #include "httprequest.h"
+#include "httprequestcontext.h"
+#include "httpfilecontext.h"
 
 static cell_t CreateClient(IPluginContext *pContext, const cell_t *params)
 {
@@ -432,6 +434,285 @@ static cell_t CreateRequest(IPluginContext *pContext, const cell_t *params)
 	return hndlRequest;
 }
 
+static cell_t PerformGetRequest(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[2]);
+	cell_t value = params[3];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: application/json");
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	HTTPRequestContext *context = new HTTPRequestContext("GET", request->GetURL(), NULL, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
+static cell_t PerformPostRequest(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	json_t *data;
+	Handle_t hndlData = static_cast<Handle_t>(params[2]);
+	if ((err=handlesys->ReadHandle(hndlData, htJSON, &sec, (void **)&data)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid JSON handle %x (error %d)", hndlData, err);
+	}
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[3]);
+	cell_t value = params[4];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: application/json");
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	HTTPRequestContext *context = new HTTPRequestContext("POST", request->GetURL(), data, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
+static cell_t PerformPutRequest(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	json_t *data;
+	Handle_t hndlData = static_cast<Handle_t>(params[2]);
+	if ((err=handlesys->ReadHandle(hndlData, htJSON, &sec, (void **)&data)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid JSON handle %x (error %d)", hndlData, err);
+	}
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[3]);
+	cell_t value = params[4];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: application/json");
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	HTTPRequestContext *context = new HTTPRequestContext("PUT", request->GetURL(), data, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
+static cell_t PerformPatchRequest(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	json_t *data;
+	Handle_t hndlData = static_cast<Handle_t>(params[2]);
+	if ((err=handlesys->ReadHandle(hndlData, htJSON, &sec, (void **)&data)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid JSON handle %x (error %d)", hndlData, err);
+	}
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[3]);
+	cell_t value = params[4];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: application/json");
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	HTTPRequestContext *context = new HTTPRequestContext("PATCH", request->GetURL(), data, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
+static cell_t PerformDeleteRequest(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[2]);
+	cell_t value = params[3];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: application/json");
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	HTTPRequestContext *context = new HTTPRequestContext("DELETE", request->GetURL(), NULL, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
+static cell_t PerformFileDownload(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	char *path;
+	pContext->LocalToString(params[2], &path);
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[3]);
+	cell_t value = params[4];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: */*");
+	headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
+
+	HTTPFileContext *context = new HTTPFileContext(false, request->GetURL(), path, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
+static cell_t PerformFileUpload(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	char *path;
+	pContext->LocalToString(params[2], &path);
+
+	IPluginFunction *callback = pContext->GetFunctionById(params[3]);
+	cell_t value = params[4];
+
+	IChangeableForward *forward = forwards->CreateForwardEx(NULL, ET_Ignore, 3, NULL, Param_Cell, Param_Cell, Param_String);
+	if (forward == NULL || !forward->AddFunction(callback))
+	{
+		return pContext->ThrowNativeError("Could not create forward.");
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Accept: */*");
+	headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
+
+	HTTPFileContext *context = new HTTPFileContext(true, request->GetURL(), path, headers, forward, value,
+		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetMaxRecvSpeed());
+
+	g_RipExt.AddRequestToQueue(context);
+
+	handlesys->FreeHandle(hndlRequest, &sec);
+
+	return 1;
+}
+
 static cell_t GetRequestConnectTimeout(IPluginContext *pContext, const cell_t *params)
 {
 	HandleError err;
@@ -699,6 +980,13 @@ const sp_nativeinfo_t http_natives[] =
 	{"HTTPClient.MaxRecvSpeed.get",		GetClientMaxRecvSpeed},
 	{"HTTPClient.MaxRecvSpeed.set",		SetClientMaxRecvSpeed},
 	{"HTTPRequest.HTTPRequest",			CreateRequest},
+	{"HTTPRequest.Get",					PerformGetRequest},
+	{"HTTPRequest.Post",				PerformPostRequest},
+	{"HTTPRequest.Put",					PerformPutRequest},
+	{"HTTPRequest.Patch",				PerformPatchRequest},
+	{"HTTPRequest.Delete",				PerformDeleteRequest},
+	{"HTTPRequest.DownloadFile",		PerformFileDownload},
+	{"HTTPRequest.UploadFile",			PerformFileUpload},
 	{"HTTPRequest.ConnectTimeout.get",	GetRequestConnectTimeout},
 	{"HTTPRequest.ConnectTimeout.set",	SetRequestConnectTimeout},
 	{"HTTPRequest.FollowLocation.get",	GetRequestFollowLocation},
