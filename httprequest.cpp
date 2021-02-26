@@ -26,6 +26,25 @@ const std::string HTTPRequest::GetURL() const
 	return url;
 }
 
+struct curl_slist *HTTPRequest::BuildHeaders(struct curl_slist *headers)
+{
+	char header[8192];
+
+	for (HTTPHeaderMap::iterator iter = this->headers.iter(); !iter.empty(); iter.next())
+	{
+		snprintf(header, sizeof(header), "%s: %s", iter->key.chars(), iter->value.c_str());
+		headers = curl_slist_append(headers, header);
+	}
+
+	return headers;
+}
+
+void HTTPRequest::SetHeader(const char *name, const char *value)
+{
+	std::string vstr(value);
+	headers.replace(name, std::move(vstr));
+}
+
 int HTTPRequest::GetConnectTimeout() const
 {
 	return connectTimeout;
