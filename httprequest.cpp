@@ -21,9 +21,36 @@
 
 #include "httprequest.h"
 
-const std::string HTTPRequest::GetURL() const
+const std::string HTTPRequest::BuildURL() const
 {
+	std::string url(this->url);
+	url.append(query);
+
 	return url;
+}
+
+void HTTPRequest::AppendQueryParam(const char *name, const char *value)
+{
+	CURL *curl = curl_easy_init();
+	if (curl == NULL)
+	{
+		return;
+	}
+
+	char *escapedName = curl_easy_escape(curl, name, 0);
+	char *escapedValue = curl_easy_escape(curl, value, 0);
+
+	if (escapedName != NULL && escapedValue != NULL)
+	{
+		query.append(query.size() == 0 ? "?" : "&");
+		query.append(escapedName);
+		query.append("=");
+		query.append(escapedValue);
+	}
+
+    curl_free(escapedName);
+    curl_free(escapedValue);
+	curl_easy_cleanup(curl);
 }
 
 struct curl_slist *HTTPRequest::BuildHeaders(const char *acceptTypes, const char *contentType)
