@@ -111,14 +111,14 @@ void HTTPRequest::SetConnectTimeout(int connectTimeout)
 	this->connectTimeout = connectTimeout;
 }
 
-bool HTTPRequest::GetFollowLocation() const
+int HTTPRequest::GetMaxRedirects() const
 {
-	return followLocation;
+	return maxRedirects;
 }
 
-void HTTPRequest::SetFollowLocation(bool followLocation)
+void HTTPRequest::SetMaxRedirects(int maxRedirects)
 {
-	this->followLocation = followLocation;
+	this->maxRedirects = maxRedirects;
 }
 
 int HTTPRequest::GetMaxRecvSpeed() const
