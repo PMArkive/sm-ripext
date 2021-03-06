@@ -72,6 +72,28 @@ void HTTPRequest::SetHeader(const char *name, const char *value)
 	headers.replace(name, std::move(vstr));
 }
 
+bool HTTPRequest::UseBasicAuth() const
+{
+	return useBasicAuth;
+}
+
+const std::string HTTPRequest::GetUsername() const
+{
+	return username;
+}
+
+const std::string HTTPRequest::GetPassword() const
+{
+	return password;
+}
+
+void HTTPRequest::SetBasicAuth(const char *username, const char *password)
+{
+	this->useBasicAuth = true;
+	this->username = username;
+	this->password = password;
+}
+
 int HTTPRequest::GetConnectTimeout() const
 {
 	return connectTimeout;
