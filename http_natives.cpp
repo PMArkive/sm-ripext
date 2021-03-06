@@ -530,7 +530,7 @@ static cell_t PerformGetRequest(IPluginContext *pContext, const cell_t *params)
 	headers = request->BuildHeaders(headers);
 
 	HTTPRequestContext *context = new HTTPRequestContext("GET", request->BuildURL(), NULL, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -574,7 +574,7 @@ static cell_t PerformPostRequest(IPluginContext *pContext, const cell_t *params)
 	headers = request->BuildHeaders(headers);
 
 	HTTPRequestContext *context = new HTTPRequestContext("POST", request->BuildURL(), data, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -618,7 +618,7 @@ static cell_t PerformPutRequest(IPluginContext *pContext, const cell_t *params)
 	headers = request->BuildHeaders(headers);
 
 	HTTPRequestContext *context = new HTTPRequestContext("PUT", request->BuildURL(), data, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -662,7 +662,7 @@ static cell_t PerformPatchRequest(IPluginContext *pContext, const cell_t *params
 	headers = request->BuildHeaders(headers);
 
 	HTTPRequestContext *context = new HTTPRequestContext("PATCH", request->BuildURL(), data, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -699,7 +699,7 @@ static cell_t PerformDeleteRequest(IPluginContext *pContext, const cell_t *param
 	headers = request->BuildHeaders(headers);
 
 	HTTPRequestContext *context = new HTTPRequestContext("DELETE", request->BuildURL(), NULL, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -739,7 +739,7 @@ static cell_t PerformFileDownload(IPluginContext *pContext, const cell_t *params
 	headers = request->BuildHeaders(headers);
 
 	HTTPFileContext *context = new HTTPFileContext(false, request->BuildURL(), path, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -779,7 +779,7 @@ static cell_t PerformFileUpload(IPluginContext *pContext, const cell_t *params)
 	headers = request->BuildHeaders(headers);
 
 	HTTPFileContext *context = new HTTPFileContext(true, request->BuildURL(), path, headers, forward, value,
-		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
+		request->GetConnectTimeout(), request->GetMaxRedirects(), request->GetTimeout(), request->GetMaxSendSpeed(),
 		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
@@ -821,7 +821,7 @@ static cell_t SetRequestConnectTimeout(IPluginContext *pContext, const cell_t *p
 	return 1;
 }
 
-static cell_t GetRequestFollowLocation(IPluginContext *pContext, const cell_t *params)
+static cell_t GetRequestMaxRedirects(IPluginContext *pContext, const cell_t *params)
 {
 	HandleError err;
 	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
@@ -833,10 +833,10 @@ static cell_t GetRequestFollowLocation(IPluginContext *pContext, const cell_t *p
 		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
 	}
 
-	return request->GetFollowLocation();
+	return request->GetMaxRedirects();
 }
 
-static cell_t SetRequestFollowLocation(IPluginContext *pContext, const cell_t *params)
+static cell_t SetRequestMaxRedirects(IPluginContext *pContext, const cell_t *params)
 {
 	HandleError err;
 	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
@@ -848,7 +848,7 @@ static cell_t SetRequestFollowLocation(IPluginContext *pContext, const cell_t *p
 		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
 	}
 
-	request->SetFollowLocation(params[2] == 1);
+	request->SetMaxRedirects(params[2]);
 
 	return 1;
 }
@@ -1068,8 +1068,8 @@ const sp_nativeinfo_t http_natives[] =
 	{"HTTPRequest.UploadFile",			PerformFileUpload},
 	{"HTTPRequest.ConnectTimeout.get",	GetRequestConnectTimeout},
 	{"HTTPRequest.ConnectTimeout.set",	SetRequestConnectTimeout},
-	{"HTTPRequest.FollowLocation.get",	GetRequestFollowLocation},
-	{"HTTPRequest.FollowLocation.set",	SetRequestFollowLocation},
+	{"HTTPRequest.MaxRedirects.get",	GetRequestMaxRedirects},
+	{"HTTPRequest.MaxRedirects.set",	SetRequestMaxRedirects},
 	{"HTTPRequest.MaxRecvSpeed.get",	GetRequestMaxRecvSpeed},
 	{"HTTPRequest.MaxRecvSpeed.set",	SetRequestMaxRecvSpeed},
 	{"HTTPRequest.MaxSendSpeed.get",	GetRequestMaxSendSpeed},
