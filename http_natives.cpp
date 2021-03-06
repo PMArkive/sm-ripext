@@ -457,6 +457,29 @@ static cell_t AppendRequestQueryParam(IPluginContext *pContext, const cell_t *pa
 	return 1;
 }
 
+static cell_t SetRequestBasicAuth(IPluginContext *pContext, const cell_t *params)
+{
+	HandleError err;
+	HandleSecurity sec(pContext->GetIdentity(), myself->GetIdentity());
+
+	HTTPRequest *request;
+	Handle_t hndlRequest = static_cast<Handle_t>(params[1]);
+	if ((err=handlesys->ReadHandle(hndlRequest, htHTTPRequest, &sec, (void **)&request)) != HandleError_None)
+	{
+		return pContext->ThrowNativeError("Invalid HTTPRequest handle %x (error %d)", hndlRequest, err);
+	}
+
+	char *username;
+	pContext->LocalToString(params[2], &username);
+
+	char *password;
+	pContext->LocalToString(params[3], &password);
+
+	request->SetBasicAuth(username, password);
+
+	return 1;
+}
+
 static cell_t SetRequestHeader(IPluginContext *pContext, const cell_t *params)
 {
 	HandleError err;
@@ -504,7 +527,7 @@ static cell_t PerformGetRequest(IPluginContext *pContext, const cell_t *params)
 	struct curl_slist *headers = request->BuildHeaders("application/json", "application/json");
 	HTTPRequestContext *context = new HTTPRequestContext("GET", request->BuildURL(), NULL, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -544,7 +567,7 @@ static cell_t PerformPostRequest(IPluginContext *pContext, const cell_t *params)
 	struct curl_slist *headers = request->BuildHeaders("application/json", "application/json");
 	HTTPRequestContext *context = new HTTPRequestContext("POST", request->BuildURL(), data, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -584,7 +607,7 @@ static cell_t PerformPutRequest(IPluginContext *pContext, const cell_t *params)
 	struct curl_slist *headers = request->BuildHeaders("application/json", "application/json");
 	HTTPRequestContext *context = new HTTPRequestContext("PUT", request->BuildURL(), data, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -624,7 +647,7 @@ static cell_t PerformPatchRequest(IPluginContext *pContext, const cell_t *params
 	struct curl_slist *headers = request->BuildHeaders("application/json", "application/json");
 	HTTPRequestContext *context = new HTTPRequestContext("PATCH", request->BuildURL(), data, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -657,7 +680,7 @@ static cell_t PerformDeleteRequest(IPluginContext *pContext, const cell_t *param
 	struct curl_slist *headers = request->BuildHeaders("application/json", "application/json");
 	HTTPRequestContext *context = new HTTPRequestContext("DELETE", request->BuildURL(), NULL, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -693,7 +716,7 @@ static cell_t PerformFileDownload(IPluginContext *pContext, const cell_t *params
 	struct curl_slist *headers = request->BuildHeaders("*/*", "application/octet-stream");
 	HTTPFileContext *context = new HTTPFileContext(false, request->BuildURL(), path, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -729,7 +752,7 @@ static cell_t PerformFileUpload(IPluginContext *pContext, const cell_t *params)
 	struct curl_slist *headers = request->BuildHeaders("*/*", "application/octet-stream");
 	HTTPFileContext *context = new HTTPFileContext(true, request->BuildURL(), path, headers, forward, value,
 		request->GetConnectTimeout(), request->GetFollowLocation(), request->GetTimeout(), request->GetMaxSendSpeed(),
-		request->GetMaxRecvSpeed());
+		request->GetMaxRecvSpeed(), request->UseBasicAuth(), request->GetUsername(), request->GetPassword());
 
 	g_RipExt.AddRequestToQueue(context);
 
@@ -1006,6 +1029,7 @@ const sp_nativeinfo_t http_natives[] =
 	{"HTTPClient.MaxRecvSpeed.set",		SetClientMaxRecvSpeed},
 	{"HTTPRequest.HTTPRequest",			CreateRequest},
 	{"HTTPRequest.AppendQueryParam",	AppendRequestQueryParam},
+	{"HTTPRequest.SetBasicAuth",		SetRequestBasicAuth},
 	{"HTTPRequest.SetHeader",			SetRequestHeader},
 	{"HTTPRequest.Get",					PerformGetRequest},
 	{"HTTPRequest.Post",				PerformPostRequest},
