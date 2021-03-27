@@ -30,6 +30,12 @@ static cell_t CreateClient(IPluginContext *pContext, const cell_t *params)
 	char *baseURL;
 	pContext->LocalToString(params[1], &baseURL);
 
+	if (baseURL[0] == '\0')
+	{
+		pContext->ThrowNativeError("Base URL cannot be empty.");
+		return BAD_HANDLE;
+	}
+
 	HTTPClient *client = new HTTPClient(baseURL);
 
 	Handle_t hndl = handlesys->CreateHandle(htHTTPClient, client, pContext->GetIdentity(), myself->GetIdentity(), NULL);
@@ -420,6 +426,12 @@ static cell_t CreateRequest(IPluginContext *pContext, const cell_t *params)
 	char *url;
 	pContext->LocalToString(params[1], &url);
 
+	if (url[0] == '\0')
+	{
+		pContext->ThrowNativeError("URL cannot be empty.");
+		return BAD_HANDLE;
+	}
+
 	HTTPRequest *request = new HTTPRequest(url);
 
 	Handle_t hndlRequest = handlesys->CreateHandle(htHTTPRequest, request, pContext->GetIdentity(), myself->GetIdentity(), NULL);
@@ -451,6 +463,11 @@ static cell_t AppendRequestQueryParam(IPluginContext *pContext, const cell_t *pa
 
 	char *value;
 	pContext->LocalToString(params[3], &value);
+
+	if (name[0] == '\0')
+	{
+		return pContext->ThrowNativeError("Parameter name cannot be empty.");
+	}
 
 	request->AppendQueryParam(name, value);
 
@@ -497,6 +514,11 @@ static cell_t SetRequestHeader(IPluginContext *pContext, const cell_t *params)
 
 	char *value;
 	pContext->LocalToString(params[3], &value);
+
+	if (name[0] == '\0')
+	{
+		return pContext->ThrowNativeError("Header name cannot be empty.");
+	}
 
 	request->SetHeader(name, value);
 
