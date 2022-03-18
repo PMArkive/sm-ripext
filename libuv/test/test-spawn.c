@@ -1176,7 +1176,7 @@ TEST_IMPL(argument_escaping) {
   WCHAR* non_verbatim_output;
 
   test_output = calloc(count, sizeof(WCHAR*));
-  ASSERT(test_output != NULL);
+  ASSERT_NOT_NULL(test_output);
   for (i = 0; i < count; ++i) {
     test_output[i] = calloc(2 * (wcslen(test_str[i]) + 2), sizeof(WCHAR));
     quote_cmd_arg(test_str[i], test_output[i]);
@@ -1185,7 +1185,7 @@ TEST_IMPL(argument_escaping) {
     total_size += wcslen(test_output[i]) + 1;
   }
   command_line = calloc(total_size + 1, sizeof(WCHAR));
-  ASSERT(command_line != NULL);
+  ASSERT_NOT_NULL(command_line);
   for (i = 0; i < count; ++i) {
     wcscat(command_line, test_output[i]);
     wcscat(command_line, L" ");
@@ -1351,7 +1351,7 @@ TEST_IMPL(spawn_with_an_odd_path) {
 
   char newpath[2048];
   char *path = getenv("PATH");
-  ASSERT(path != NULL);
+  ASSERT_NOT_NULL(path);
   snprintf(newpath, 2048, ";.;%s", path);
   SetEnvironmentVariable("PATH", newpath);
 
@@ -1385,7 +1385,7 @@ TEST_IMPL(spawn_setuid_setgid) {
 
   /* become the "nobody" user. */
   pw = getpwnam("nobody");
-  ASSERT(pw != NULL);
+  ASSERT_NOT_NULL(pw);
   options.uid = pw->pw_uid;
   options.gid = pw->pw_gid;
   snprintf(uidstr, sizeof(uidstr), "%d", pw->pw_uid);
@@ -1423,7 +1423,7 @@ TEST_IMPL(spawn_setuid_fails) {
   if (uid == 0) {
     struct passwd* pw;
     pw = getpwnam("nobody");
-    ASSERT(pw != NULL);
+    ASSERT_NOT_NULL(pw);
     ASSERT(0 == setgid(pw->pw_gid));
     ASSERT(0 == setuid(pw->pw_uid));
   }
@@ -1474,7 +1474,7 @@ TEST_IMPL(spawn_setgid_fails) {
   if (uid == 0) {
     struct passwd* pw;
     pw = getpwnam("nobody");
-    ASSERT(pw != NULL);
+    ASSERT_NOT_NULL(pw);
     ASSERT(0 == setgid(pw->pw_gid));
     ASSERT(0 == setuid(pw->pw_uid));
   }
@@ -1889,6 +1889,44 @@ TEST_IMPL(spawn_quoted_path) {
   MAKE_VALGRIND_HAPPY();
   return 0;
 #endif
+}
+
+TEST_IMPL(spawn_exercise_sigchld_issue) {
+  int r;
+  int i;
+  uv_process_options_t dummy_options = {0};
+  uv_process_t dummy_processes[100];
+  char* args[2];
+
+  init_process_options("spawn_helper1", exit_cb);
+
+  r = uv_spawn(uv_default_loop(), &process, &options);
+  ASSERT_EQ(r, 0);
+
+  // This test exercises a bug in the darwin kernel that causes SIGCHLD not to
+  // be delivered sometimes. Calling posix_spawn many times increases the
+  // likelihood of encountering this issue, so spin a few times to make this
+  // test more reliable.
+  dummy_options.file = args[0] = "program-that-had-better-not-exist";
+  args[1] = NULL;
+  dummy_options.args = args;
+  dummy_options.exit_cb = fail_cb;
+  dummy_options.flags = 0;
+  for (i = 0; i < 100; i++) {
+    r = uv_spawn(uv_default_loop(), &dummy_processes[i], &dummy_options);
+    if (r != UV_ENOENT)
+      ASSERT_EQ(r, UV_EACCES);
+    uv_close((uv_handle_t*) &dummy_processes[i], close_cb);
+  }
+
+  r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+  ASSERT_EQ(r, 0);
+
+  ASSERT_EQ(exit_cb_called, 1);
+  ASSERT_EQ(close_cb_called, 101);
+
+  MAKE_VALGRIND_HAPPY();
+  return 0;
 }
 
 /* Helper for child process of spawn_inherit_streams */

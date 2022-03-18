@@ -91,6 +91,7 @@ for cxx in builder.targets:
         'unix/procfs-exepath.c',
         'unix/random-getrandom.c',
         'unix/random-sysctl-linux.c',
+        'unix/epoll.c',
       ]
     elif binary.compiler.target.platform == 'mac':
       binary.sources += [
