@@ -565,7 +565,7 @@ func TestH2H1BadResponseCL(t *testing.T) {
 		t.Fatalf("Error st.http2() = %v", err)
 	}
 
-	want := http2.ErrCodeProtocol
+	want := http2.ErrCodeInternal
 	if res.errCode != want {
 		t.Errorf("res.errCode = %v; want %v", res.errCode, want)
 	}
@@ -2836,5 +2836,122 @@ func TestH2ResponseBeforeRequestEnd(t *testing.T) {
 	}
 	if got, want := res.status, 404; got != want {
 		t.Errorf("res.status: %v; want %v", got, want)
+	}
+}
+
+// TestH2H1ChunkedEndsPrematurely tests that a stream is reset if the
+// backend chunked encoded response ends prematurely.
+func TestH2H1ChunkedEndsPrematurely(t *testing.T) {
+	st := newServerTester(nil, t, func(w http.ResponseWriter, r *http.Request) {
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			http.Error(w, "Could not hijack the connection", http.StatusInternalServerError)
+			return
+		}
+		conn, bufrw, err := hj.Hijack()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer conn.Close()
+		bufrw.WriteString("HTTP/1.1 200\r\nTransfer-Encoding: chunked\r\n\r\n")
+		bufrw.Flush()
+	})
+	defer st.Close()
+
+	res, err := st.http2(requestParam{
+		name: "TestH2H1ChunkedEndsPrematurely",
+	})
+	if err != nil {
+		t.Fatalf("Error st.http2() = %v", err)
+	}
+
+	if got, want := res.errCode, http2.ErrCodeInternal; got != want {
+		t.Errorf("res.errCode = %v; want %v", got, want)
+	}
+}
+
+// TestH2H1RequireHTTPSchemeHTTPSWithoutEncryption verifies that https
+// scheme in non-encrypted connection is treated as error.
+func TestH2H1RequireHTTPSchemeHTTPSWithoutEncryption(t *testing.T) {
+	st := newServerTester([]string{"--require-http-scheme"}, t, func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("server should not forward this request")
+	})
+	defer st.Close()
+
+	res, err := st.http2(requestParam{
+		name:   "TestH2H1RequireHTTPSchemeHTTPSWithoutEncryption",
+		scheme: "https",
+	})
+	if err != nil {
+		t.Fatalf("Error st.http2() = %v", err)
+	}
+
+	if got, want := res.status, 400; got != want {
+		t.Errorf("status = %v; want %v", got, want)
+	}
+}
+
+// TestH2H1RequireHTTPSchemeHTTPWithEncryption verifies that http
+// scheme in encrypted connection is treated as error.
+func TestH2H1RequireHTTPSchemeHTTPWithEncryption(t *testing.T) {
+	st := newServerTesterTLS([]string{"--require-http-scheme"}, t, func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("server should not forward this request")
+	})
+	defer st.Close()
+
+	res, err := st.http2(requestParam{
+		name:   "TestH2H1RequireHTTPSchemeHTTPWithEncryption",
+		scheme: "http",
+	})
+	if err != nil {
+		t.Fatalf("Error st.http2() = %v", err)
+	}
+
+	if got, want := res.status, 400; got != want {
+		t.Errorf("status = %v; want %v", got, want)
+	}
+}
+
+// TestH2H1RequireHTTPSchemeUnknownSchemeWithoutEncryption verifies
+// that unknown scheme in non-encrypted connection is treated as
+// error.
+func TestH2H1RequireHTTPSchemeUnknownSchemeWithoutEncryption(t *testing.T) {
+	st := newServerTester([]string{"--require-http-scheme"}, t, func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("server should not forward this request")
+	})
+	defer st.Close()
+
+	res, err := st.http2(requestParam{
+		name:   "TestH2H1RequireHTTPSchemeUnknownSchemeWithoutEncryption",
+		scheme: "unknown",
+	})
+	if err != nil {
+		t.Fatalf("Error st.http2() = %v", err)
+	}
+
+	if got, want := res.status, 400; got != want {
+		t.Errorf("status = %v; want %v", got, want)
+	}
+}
+
+// TestH2H1RequireHTTPSchemeUnknownSchemeWithEncryption verifies that
+// unknown scheme in encrypted connection is treated as error.
+func TestH2H1RequireHTTPSchemeUnknownSchemeWithEncryption(t *testing.T) {
+	st := newServerTesterTLS([]string{"--require-http-scheme"}, t, func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("server should not forward this request")
+	})
+	defer st.Close()
+
+	res, err := st.http2(requestParam{
+		name:   "TestH2H1RequireHTTPSchemeUnknownSchemeWithEncryption",
+		scheme: "unknown",
+	})
+	if err != nil {
+		t.Fatalf("Error st.http2() = %v", err)
+	}
+
+	if got, want := res.status, 400; got != want {
+		t.Errorf("status = %v; want %v", got, want)
 	}
 }
