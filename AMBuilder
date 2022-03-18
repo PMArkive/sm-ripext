@@ -50,6 +50,11 @@ for cxx in builder.targets:
 
   if binary.compiler.target.platform == 'linux':
     binary.compiler.postlink += ['-lrt']
+  elif binary.compiler.target.platform == 'mac':
+    binary.compiler.postlink += [
+      'CoreFoundation',
+      'SystemConfiguration',
+    ]
   elif binary.compiler.target.platform == 'windows':
     binary.compiler.postlink += [
       'iphlpapi.lib',
