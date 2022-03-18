@@ -255,6 +255,8 @@ class ExtensionConfig(object):
       '-mmacosx-version-min=10.7',
       '-lc++',
       '-stdlib=libc++',
+      '-framework CoreFoundation',
+      '-framework SystemConfiguration',
     ]
     cxx.cxxflags += ['-stdlib=libc++']
 

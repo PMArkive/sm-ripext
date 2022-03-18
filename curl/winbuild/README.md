@@ -73,7 +73,7 @@ Open a Visual Studio Command prompt:
 
 where `<options>` is one or many of:
 
- - `VC=<6,7,8,9,10,11,12,14,15>` - VC version
+ - `VC=<num>`                    - VC version. 6 or later.
  - `WITH_DEVEL=<path>`           - Paths for the development files (SSL, zlib, etc.)
                                    Defaults to sibbling directory deps: ../deps
                                    Libraries can be fetched at https://windows.php.net/downloads/php-sdk/deps/
@@ -83,6 +83,7 @@ where `<options>` is one or many of:
  - `WITH_MBEDTLS=<dll/static>`   - Enable mbedTLS support, DLL or static
  - `WITH_CARES=<dll/static>`     - Enable c-ares support, DLL or static
  - `WITH_ZLIB=<dll/static>`      - Enable zlib support, DLL or static
+ - `WITH_SSH=<dll/static>`       - Enable libSSH support, DLL or static
  - `WITH_SSH2=<dll/static>`      - Enable libSSH2 support, DLL or static
  - `WITH_PREFIX=<dir>`           - Where to install the build
  - `ENABLE_SSPI=<yes/no>`        - Enable SSPI support, defaults to yes
@@ -95,7 +96,8 @@ where `<options>` is one or many of:
                                  - Enable loading OpenSSL configuration
                                    automatically, defaults to yes
  - `ENABLE_UNICODE=<yes/no>`     - Enable UNICODE support, defaults to no
- - `GEN_PDB=<yes/no>`            - Generate Program Database (debug symbols for release build)
+ - `GEN_PDB=<yes/no>`            - Generate External Program Database
+                                   (debug symbols for release build)
  - `DEBUG=<yes/no>`              - Debug builds
  - `MACHINE=<x86/x64>`           - Target architecture (default is x86)
  - `CARES_PATH=<path>`           - Custom path for c-ares
